@@ -14,7 +14,7 @@ type RoomManager struct {
 	rw   sync.RWMutex
 }
 
-// NewRoomManager 构造
+// NewRoomManager 构造 1
 func NewRoomManager() *RoomManager {
 	m := &RoomManager{
 		room: make(map[uint64]*room.Room),
