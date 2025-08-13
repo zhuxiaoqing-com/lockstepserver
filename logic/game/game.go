@@ -22,11 +22,11 @@ const (
 )
 
 const (
-	MaxReadyTime          int64  = 20            // 准备阶段最长时间，如果超过这个时间没人连进来直接关闭游戏
+	MaxReadyTime          int64  = 5             // 准备阶段最长时间，如果超过这个时间没人连进来直接关闭游戏
 	MaxGameFrame          uint32 = 30*60*3 + 100 // 每局最大帧数
 	BroadcastOffsetFrames        = 3             // 每隔多少帧广播一次
 	kMaxFrameDataPerMsg          = 60            // 每个消息包最多包含多少个帧数据
-	kBadNetworkThreshold         = 2             // 这个时间段没有收到心跳包认为他网络很差，不再持续给发包(网络层的读写时间设置的比较长，客户端要求的方案)
+	kBadNetworkThreshold         = 5             // 这个时间段没有收到心跳包认为他网络很差，不再持续给发包(网络层的读写时间设置的比较长，客户端要求的方案)
 )
 
 type gameListener interface {
@@ -252,7 +252,7 @@ func (g *Game) Tick(now int64) bool {
 			return true
 		}
 
-		g.logic.tick()
+		g.logic.tick(g)
 		g.broadcastFrameData()
 
 		return true
@@ -338,12 +338,10 @@ func (g *Game) pushInput(p *Player, msg *pb.C2S_InputMsg) bool {
 
 	cmd := &pb.InputData{
 		Id:         proto.Uint64(p.id),
-		Sid:        proto.Int32(msg.GetSid()),
-		X:          proto.Int32(msg.GetX()),
-		Y:          proto.Int32(msg.GetY()),
+		Event:      msg.GetEvent(),
+		Input:      msg.GetInput(),
 		Roomseatid: proto.Int32(p.idx),
 	}
-
 	return g.logic.pushCmd(cmd)
 }
 
@@ -395,7 +393,7 @@ func (g *Game) broadcastFrameData() {
 	if !g.dirty && framesCount-g.clientFrameCount < BroadcastOffsetFrames {
 		return
 	}
-
+	//l4g.Warn("tick dirty %s framesCount %s", time.Now().UnixMilli(), framesCount)
 	defer func() {
 		g.dirty = false
 		g.clientFrameCount = framesCount
@@ -439,6 +437,7 @@ func (g *Game) broadcastFrameData() {
 
 		// 网络不好的
 		if now-p.GetLastHeartbeatTime() >= kBadNetworkThreshold {
+			l4g.Warn("broadcastFrameData timeout")
 			continue
 		}
 
@@ -448,6 +447,7 @@ func (g *Game) broadcastFrameData() {
 		msg := &pb.S2C_FrameMsg{}
 		for ; i < framesCount; i++ {
 			frameData := g.logic.getFrame(i)
+			// 如果是nil的话就只广播最后一帧
 			if nil == frameData && i != (framesCount-1) {
 				continue
 			}
@@ -459,6 +459,16 @@ func (g *Game) broadcastFrameData() {
 			if nil != frameData {
 				f.Input = frameData.cmds
 			}
+
+			var i2 int32 = 0
+			if nil != frameData && len(frameData.cmds) > 0 && frameData.cmds[0].Input != nil {
+				i2 = *frameData.cmds[0].Input.Sid
+			}
+
+			if i2 > 0 {
+				// l4g.Warn("[%s]  send input FrameId %s , sid %s Time %s", i2, f, i2, time.Now().UnixMilli())
+			}
+
 			msg.Frames = append(msg.Frames, f)
 			c++
 

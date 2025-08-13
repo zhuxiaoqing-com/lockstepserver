@@ -1,4 +1,4 @@
 #!/bin/bash
 set -ex
 
-protoc --go_out=. --go_opt=paths=source_relative *.proto
+protoc --plugin=protoc-gen-go=protoc-gen-go.exe --go_out=./ ./path/to/your.proto
