@@ -73,19 +73,28 @@ message S2C_ProgressMsg  {
 
 //操作输入消息
 message C2S_InputMsg  {
-    optional int32 sid              = 1;    //操作id
-    optional int32 x                = 2;    //操作位置x
-    optional int32 y                = 3;    //操作位置y
-    optional uint32 frameID         = 4;    //帧ID
+    optional PBInput input              = 1;    //操作id
+    optional PBEvent  event             = 2;    //事件
+    optional uint32 frameID         = 3;    //帧ID
 }
+
+//上一帧客户端没有输入 重复输入
+message PBInput{
+  optional int32 sid                = 1;    //操作id
+}
+
+//上一帧客户端没有输入 事件归零
+message PBEvent{
+  optional int32 eventId                = 1;    //操作id
+}
+
 
 //帧存储操作输入
 message InputData {
     optional uint64 id              = 1;    //id
-    optional int32 sid              = 2;    //操作id
-    optional int32 x                = 3;    //操作位置x
-    optional int32 y                = 4;    //操作位置y
-    optional int32 roomseatid       = 5;    //操作者的位置索引id(1~N)
+  optional PBInput input              = 2;    //操作id
+  optional PBEvent  event             = 3;    //事件
+  optional int32 roomseatid       = 4;    //操作者的位置索引id(1~N)
 }
 
 //帧数据

@@ -86,7 +86,7 @@ func main() {
 	// write
 	for i := 0; i < 10; i++ {
 		p := pb_packet.NewPacket(uint8(pb.ID_MSG_Input), &pb.C2S_InputMsg{
-			Sid: proto.Int32(int32(i)),
+			//Sid: proto.Int32(int32(i)),
 		})
 
 		if _, e := c.Write(p.Serialize()); nil != e {
